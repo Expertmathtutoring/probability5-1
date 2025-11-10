@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>💸 Finance Frenzy – Stage 5 Financial Mathematics</title>
+<style>
+body{
+  margin:0;font-family:"Segoe UI",sans-serif;color:#fff;
+  background:linear-gradient(120deg,#0f2027,#203a43,#2c5364);
+  background-size:400% 400%;animation:bg 16s ease infinite;
+  display:flex;min-height:100vh;overflow:hidden;
+}
+@keyframes bg{0%{background-position:0%50%}50%{background-position:100%50%}100%{background-position:0%50%}}
+.sidebar{width:230px;background:rgba(0,0,0,.4);padding:14px;border-right:1px solid rgba(255,255,255,.2)}
+.tab{display:block;width:100%;margin:8px 0;padding:10px;border:none;border-radius:8px;
+  background:rgba(255,255,255,.15);color:#fff;cursor:pointer;transition:.2s}
+.tab:hover{background:rgba(255,255,255,.3)}
+.main{flex:1;display:flex;flex-direction:column;padding:14px}
+.topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;
+  background:rgba(255,255,255,.1);padding:10px;border-radius:8px;margin-bottom:12px}
+.badge{background:rgba(255,255,255,.15);padding:6px 10px;border-radius:10px}
+.question{text-align:center;font-weight:bold;font-size:1.4em;margin:10px auto}
+#gameArea{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.25);border:2px solid rgba(255,255,255,.3);border-radius:14px;padding:20px}
+.choice{background:linear-gradient(45deg,#56ab2f,#a8e063);color:#fff;
+  font-weight:bold;margin:10px 0;padding:10px 16px;border-radius:10px;cursor:pointer;transition:.2s;width:80%;max-width:420px;text-align:center}
+.choice:hover{transform:scale(1.05);background:linear-gradient(45deg,#a8e063,#56ab2f)}
+.correct{background:#4caf50!important}
+.incorrect{background:#e53935!important}
+#message{text-align:center;margin-top:10px;font-weight:bold;font-size:1.1em}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+<h2>💸 Finance Frenzy</h2>
+<button class="tab" id="restartTab">Restart</button>
+<button class="tab" id="hintTab">Hint</button>
+<button class="tab" id="stopTab">Stop</button>
+<button class="tab" id="helpTab">Help</button>
+</aside>
+
+<main class="main">
+<div class="topbar">
+  <div class="badge">Score: <span id="score">0</span></div>
+  <div class="badge">Round: <span id="round">0</span>/15</div>
+</div>
+<div class="question" id="question">Press Restart to begin!</div>
+<div id="gameArea"></div>
+<div id="message"></div>
+</main>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+let score=0,round=0,active=false;
+const maxRounds=15;
+
+const questions=[
+  {q:"You invest $2000 at 4% compound interest for 3 years. Find the total amount.",
+   choices:["$2249.73","$2250","$2400","$2120"],
+   a:"$2249.73",hint:"Use A = P(1 + r)^t"},
+  {q:"A car worth $40,000 depreciates at 12% per year. Value after 2 years?",
+   choices:["$30,976","$31,000","$32,000","$28,000"],
+   a:"$30,976",hint:"Use V = P(1 − r)^t"},
+  {q:"Simple interest: $5000 at 7% for 4 years.",
+   choices:["$1400","$1350","$1500","$1200"],a:"$1400",hint:"I = P×R×T"},
+  {q:"You borrow $12,000 at 9% p.a. reducing balance for 3 years. Type of interest?",
+   choices:["Simple","Compound","Flat","GST"],a:"Reducing balance",hint:"Interest decreases each year"},
+  {q:"A laptop increases in price from $1200 to $1320. What % increase?",
+   choices:["8%","10%","12%","6%"],a:"10%",hint:"(Change ÷ Original)×100"},
+  {q:"You buy a TV for $1800 including 10% GST. Price before GST?",
+   choices:["$1620","$1650","$1680","$1700"],a:"$1636.36",hint:"Divide by 1.10"},
+  {q:"$10,000 invested at 5% comp. interest for 2 years. Find interest earned.",
+   choices:["$1025","$1000","$1050","$1100"],a:"$1025",hint:"A−P"},
+  {q:"A car loan of $25,000 depreciates 15% p.a. After 3 years value?",
+   choices:["$16,000","$18,100","$17,984","$19,000"],a:"$17,984",hint:"Use V=P(1−r)^t"},
+  {q:"Your income is $900/week; tax rate 20%. Net pay?",
+   choices:["$700","$720","$750","$760"],a:"$720",hint:"Subtract 20% tax"},
+  {q:"You invest $3000, earns $180 interest in 2 years. Rate?",
+   choices:["3%","2.5%","4%","6%"],a:"3%",hint:"I=P×R×T"},
+  {q:"You put $5000 in account at 6% compound for 5 years. Amount?",
+   choices:["$6691.13","$6500","$6600","$6800"],a:"$6691.13",hint:"A=P(1+r)^t"},
+  {q:"$800 phone depreciates 20%. New value?",
+   choices:["$640","$650","$660","$680"],a:"$640",hint:"80% of 800"},
+  {q:"Savings account: $4000 → $4280 in 1 year. Interest rate?",
+   choices:["6%","7%","8%","9%"],a:"7%",hint:"(Change ÷ Original)×100"},
+  {q:"$1000 grows to $1210 in 2 years compound interest. Annual rate?",
+   choices:["10%","5%","6%","8%"],a:"10%",hint:"Solve (1+r)^2 = 1.21"},
+  {q:"Your super fund earns 8% p.a. After 10 years $15,000 becomes?",
+   choices:["$32,383","$31,000","$33,000","$30,000"],a:"$32,383",hint:"A=P(1+r)^t"}
+];
+
+let current=null;
+
+function startRound(){
+ if(round>=maxRounds){endGame();return;}
+ active=true;$("message").textContent="";$("gameArea").innerHTML="";
+ round++;$("round").textContent=round;
+ current=questions[Math.floor(Math.random()*questions.length)];
+ $("question").textContent=current.q;
+ const shuffled=[...current.choices].sort(()=>Math.random()-0.5);
+ shuffled.forEach(c=>{
+  const btn=document.createElement("div");
+  btn.className="choice";btn.textContent=c;
+  btn.onclick=()=>{
+   if(!active)return;
+   if(c===current.a){btn.classList.add("correct");score++;$("score").textContent=score;$("message").textContent="✅ Correct!";}
+   else{btn.classList.add("incorrect");$("message").textContent=`❌ Wrong! Correct: ${current.a}`;}
+   active=false;setTimeout(startRound,1300);
+  };
+  $("gameArea").appendChild(btn);
+ });
+}
+
+function endGame(){
+ $("question").textContent=`🏁 Game over! Final Score: ${score}/${round}`;
+ $("gameArea").innerHTML="";$("message").textContent="Press Restart to try again.";active=false;
+}
+
+$("restartTab").onclick=()=>{
+ score=0;round=0;$("score").textContent=0;$("round").textContent=0;
+ $("question").textContent="Starting...";setTimeout(startRound,600);
+};
+$("hintTab").onclick=()=>{if(current)alert("💡 Hint: "+current.hint)};
+$("stopTab").onclick=()=>{$("gameArea").innerHTML="";$("message").textContent="⏹ Game paused. Restart to resume.";active=false};
+$("helpTab").onclick=()=>{alert("💸 Finance Frenzy Instructions:\n• Click Restart to begin.\n• Choose the correct answer.\n• Use Hint if stuck.\n• Each correct = +1 point.\n• 15 rounds total.\n• Suitable for Stage 5 Financial Mathematics.");};
+})();
+</script>
+</body>
+</html>
